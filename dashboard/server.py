@@ -79,21 +79,13 @@ class App:
         run_every(2, self.flights.refresh, "flights")
         run_every(60, self.timelapse.refresh, "timelapse")
         run_every(5, self.check_settings_file, "settings")
-        threading.Thread(target=self.learn_live_codec, daemon=True).start()
-
-    def learn_live_codec(self):
-        try:
-            self.live.learn_codec()
-        except Exception as e:
-            log.info("backyard live: recorder not reachable yet (%s)", e)
 
     def check_settings_file(self):
         """settings.yaml edited by hand: use it now, no restart needed."""
         if self.settings.reload_if_changed():
             self.settings_rev += 1  # open pages reload
-            self.live.codec = None  # the camera address may have changed
+            self.live.restart()  # the camera address or login may have changed
             threading.Thread(target=self.timelapse.refresh, daemon=True).start()
-            threading.Thread(target=self.learn_live_codec, daemon=True).start()
 
     def backyard_status(self):
         return {
