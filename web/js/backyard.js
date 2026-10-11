@@ -63,12 +63,16 @@ function watchLive() {
     $("live-dot").classList.add("on");
     message("live-msg", "");
   });
+  let lastTime = -1;
   v.addEventListener("timeupdate", () => {
-    B.liveProgress = Date.now();
-    // Stay at the newest picture instead of drifting behind.
+    if (v.currentTime !== lastTime) B.liveProgress = Date.now(); // the picture moved
+    lastTime = v.currentTime;
+    // Stay near the newest picture by playing a little faster when behind.
+    // (Never jump ahead: a live stream can't be skipped through, and trying
+    // made the player snap back to the start over and over.)
     if (v.buffered.length) {
-      const end = v.buffered.end(v.buffered.length - 1);
-      if (end - v.currentTime > 2.5) v.currentTime = end - 0.3;
+      const behind = v.buffered.end(v.buffered.length - 1) - v.currentTime;
+      v.playbackRate = behind > 3 ? 1.25 : behind < 1 ? 1 : v.playbackRate;
     }
   });
   v.addEventListener("error", () => v.getAttribute("src") && liveFailed());
