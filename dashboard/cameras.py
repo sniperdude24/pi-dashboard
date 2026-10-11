@@ -5,6 +5,7 @@ passed straight through, no re-encoding) and the last-hour timelapse
 import base64
 import json
 import logging
+import re
 import subprocess
 import threading
 import time
@@ -16,6 +17,12 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from . import nws
 
 log = logging.getLogger(__name__)
+
+
+def hide_login(text):
+    """ffmpeg repeats the address in its errors, login included: blank it out
+    before anything is logged or shown."""
+    return re.sub(r"//[^/@\s]+:[^/@\s]*@", "//", text)
 
 
 def _with_login(url, user, password):
@@ -101,10 +108,12 @@ class Live:
 
     def configured(self):
         cfg = self.settings["backyard"]["live"]
-        if not cfg["password"]:
-            self.error = "Add the recorder's user and password to settings.yaml (backyard → live)."
-            return False
-        return True
+        return bool(cfg["user"] and cfg["password"])
+
+    def status_error(self):
+        if not self.configured():
+            return "Add the recorder's user and password to settings.yaml (backyard → live)."
+        return self.error
 
     def probe(self):
         """Ask the recorder what kind of video it sends (H.264 can be passed
@@ -115,7 +124,7 @@ class Live:
             capture_output=True, text=True, timeout=20,
         )
         if out.returncode != 0:
-            msg = out.stderr.strip().splitlines()[-1] if out.stderr.strip() else "no answer"
+            msg = hide_login(out.stderr.strip().splitlines()[-1]) if out.stderr.strip() else "no answer"
             if "401" in msg:
                 raise RuntimeError("The recorder refused the login. Check backyard → live in settings.yaml.")
             raise RuntimeError(f"Can't reach the recorder ({msg}).")
@@ -141,13 +150,13 @@ class Live:
     def stream_to(self, write):
         """Run ffmpeg and hand its output to `write` until the viewer leaves."""
         if not self.configured():
-            raise RuntimeError(self.error)
+            raise RuntimeError(self.status_error())
         try:
             cmd = self.command()
         except Exception as e:
             self.codec = None
-            self.error = str(e)
-            raise
+            self.error = hide_login(str(e))  # e.g. a timeout repeats the whole command
+            raise RuntimeError(self.error) from None
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.error = None
         try:
@@ -158,4 +167,4 @@ class Live:
             proc.wait()
             err = proc.stderr.read().decode(errors="replace").strip()
             if err:
-                log.info("backyard live ffmpeg: %s", err.splitlines()[-1])
+                log.info("backyard live ffmpeg: %s", hide_login(err.splitlines()[-1]))

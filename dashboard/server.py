@@ -88,10 +88,9 @@ class App:
             threading.Thread(target=self.timelapse.refresh, daemon=True).start()
 
     def backyard_status(self):
-        self.live.configured()
         return {
             "timelapse": {**self.timelapse.meta, "error": self.timelapse.error},
-            "live": {"error": self.live.error},
+            "live": {"error": self.live.status_error()},
         }
 
     def can_edit(self, client):
@@ -209,7 +208,10 @@ def make_handler(app: App):
                 self.send_header("Content-Range", f"bytes {start}-{end}/{total}")
             self.send_header("Cache-Control", "max-age=86400")  # each version has its own ?v=
             self.end_headers()
-            self.wfile.write(data[start : end + 1])
+            try:
+                self.wfile.write(data[start : end + 1])
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the browser only wanted part of it (normal when skipping)
 
         def send_live(self):
             """The live picture, for as long as the viewer keeps the connection open."""
