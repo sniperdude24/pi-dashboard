@@ -101,7 +101,9 @@ function renderNow() {
 // ---------- Forecasts ----------
 
 function renderHourly() {
-  const hours = (W.hourly || []).slice(0, 12);
+  // Skip hours that have already ended (the saved forecast may be a few minutes old).
+  const now = Date.now();
+  const hours = (W.hourly || []).filter((h) => new Date(h.time).getTime() + 3600e3 > now).slice(0, 12);
   document.getElementById("hourly").innerHTML = hours
     .map(
       (h) => `<div class="hour"><div class="h">${fmtHour(h.time)}</div>${icon(weatherIcon(h.icon))}
