@@ -33,6 +33,7 @@ function startLive() {
   const v = $("live");
   $("live-status").textContent = "Connecting…";
   B.liveProgress = Date.now();
+  B.livePlaying = false;
   v.src = `/camera/live.mp4?t=${Date.now()}`;
   v.play().catch(() => {});
 }
@@ -59,6 +60,7 @@ function liveFailed() {
 function watchLive() {
   const v = $("live");
   v.addEventListener("playing", () => {
+    B.livePlaying = true;
     $("live-status").textContent = "Live";
     $("live-dot").classList.add("on");
     message("live-msg", "");
@@ -77,9 +79,10 @@ function watchLive() {
   });
   v.addEventListener("error", () => v.getAttribute("src") && liveFailed());
   v.addEventListener("ended", liveFailed);
-  // Restart if the picture freezes.
+  // Restart if the picture freezes (allowing longer for the first picture).
   setInterval(() => {
-    if (B.visible && v.getAttribute("src") && Date.now() - B.liveProgress > 12000) {
+    const limit = B.livePlaying ? 12000 : 20000;
+    if (B.visible && v.getAttribute("src") && Date.now() - B.liveProgress > limit) {
       stopLive();
       liveFailed();
     }

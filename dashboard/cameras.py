@@ -18,7 +18,10 @@ from . import nws
 
 log = logging.getLogger(__name__)
 
-STALL_SECONDS = 20  # the recorder takes ~6s to start sending; more than this is a hang
+STALL_SECONDS = 20  # no picture for this long means the recorder hung
+# ffmpeg normally studies a stream for ~5 s before sending anything; half a
+# second is plenty here (measured on the Pi: first picture after 1.4 s, not 6).
+QUICK_START = ["-analyzeduration", "500000", "-probesize", "65536"]
 
 
 def hide_login(text):
@@ -120,11 +123,14 @@ class Live:
     def probe(self):
         """Ask the recorder what kind of video it sends (H.264 can be passed
         straight to the browser; anything else has to be converted)."""
-        out = subprocess.run(
-            ["ffprobe", "-v", "error", "-rtsp_transport", "tcp", "-select_streams", "v:0",
-             "-show_entries", "stream=codec_name,width,height", "-of", "json", self.url()],
-            capture_output=True, text=True, timeout=20,
-        )
+        try:
+            out = subprocess.run(
+                ["ffprobe", "-v", "error", "-rtsp_transport", "tcp", *QUICK_START, "-select_streams", "v:0",
+                 "-show_entries", "stream=codec_name,width,height", "-of", "json", self.url()],
+                capture_output=True, text=True, timeout=20,
+            )
+        except subprocess.TimeoutExpired:  # its message would repeat the login
+            raise RuntimeError("The recorder didn't answer in time.") from None
         if out.returncode != 0:
             msg = hide_login(out.stderr.strip().splitlines()[-1]) if out.stderr.strip() else "no answer"
             if "401" in msg:
@@ -133,17 +139,21 @@ class Live:
         stream = json.loads(out.stdout)["streams"][0]
         return stream["codec_name"], stream.get("width"), stream.get("height")
 
-    def command(self):
+    def learn_codec(self):
+        """Find out the stream format ahead of time, so viewers don't wait for it."""
         with self.lock:
-            if self.codec is None:
+            if self.codec is None and self.configured():
                 self.codec, w, h = self.probe()
                 log.info("backyard live: %s %sx%s", self.codec, w, h)
+
+    def command(self):
+        self.learn_codec()
         video = ["-c:v", "copy"] if self.codec == "h264" else [
             "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency", "-vf", "scale=-2:540",
         ]
         return [
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-rtsp_transport", "tcp",
-            "-fflags", "nobuffer", "-flags", "low_delay",
+            "-fflags", "nobuffer", "-flags", "low_delay", *QUICK_START,
             # Reolink recorders send the stream without timestamps; use the Pi's clock.
             "-use_wallclock_as_timestamps", "1",
             "-i", self.url(),
