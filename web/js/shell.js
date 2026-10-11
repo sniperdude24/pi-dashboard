@@ -57,9 +57,13 @@ function tick() {
 
 let down = null;
 
+// Things on the pages that do something when tapped. Tapping one of these never
+// brings up the control bar, so the bar can't end up covering it.
+const TAPPABLE = "button, a, input, select, [data-act], [data-id], [data-i], #alert, .leaflet-marker-icon, .overlay";
+
 function watchTouches(doc) {
   doc.addEventListener("pointerdown", (e) => {
-    touched();
+    touched(e.target);
     down = { x: e.screenX, y: e.screenY, t: Date.now() };
   }, true);
   doc.addEventListener("pointerup", (e) => {
@@ -72,12 +76,24 @@ function watchTouches(doc) {
   }, true);
 }
 
-function touched() {
+function touched(target) {
   shell.lastTouch = Date.now();
   updateDim();
+  const bar = $("bar");
+  if (bar.contains(target)) showBar(); // using the bar: keep it up
+  else if (!bar.classList.contains("hidden")) hideBar(); // a tap anywhere else closes it
+  else if (!(target.closest && target.closest(TAPPABLE))) showBar(); // empty space opens it
+}
+
+function showBar() {
   $("bar").classList.remove("hidden");
   clearTimeout(shell.barTimer);
-  shell.barTimer = setTimeout(() => $("bar").classList.add("hidden"), BAR_SECONDS * 1000);
+  shell.barTimer = setTimeout(hideBar, BAR_SECONDS * 1000);
+}
+
+function hideBar() {
+  clearTimeout(shell.barTimer);
+  $("bar").classList.add("hidden");
 }
 
 function setPaused(on) {
@@ -114,7 +130,7 @@ function updateDim() {
 function openSettings() {
   shell.settingsOpen = true;
   updateDim();
-  $("bar").classList.add("hidden");
+  hideBar();
   const layer = $("settings-layer");
   layer.innerHTML = `<iframe src="/settings${KIOSK ? "?kiosk" : ""}" title="Settings"></iframe>`;
   layer.hidden = false;
