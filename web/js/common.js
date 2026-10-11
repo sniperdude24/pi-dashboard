@@ -57,11 +57,25 @@ function hideOverlay() {
   document.getElementById("overlay").hidden = true;
 }
 
-// Load page settings, and reload the page by itself after an update.
+// Same as showOverlay, but with ready-made HTML for the body.
+function showOverlayHTML(title, html) {
+  const o = document.getElementById("overlay");
+  o.querySelector(".overlay-title").textContent = title;
+  o.querySelector(".overlay-body").innerHTML = html;
+  o.querySelector(".overlay-body").scrollTop = 0;
+  o.hidden = false;
+}
+
+const EMBEDDED = window.top !== window; // running inside the rotating screen
+
+// Load page settings, and reload the page by itself after an update or a
+// settings change. Inside the rotating screen, the screen does the reloading.
 async function watchVersion() {
+  if (EMBEDDED && CONFIG.version) return;
   try {
     const cfg = await getJSON("/api/config");
-    if (CONFIG.version && cfg.version !== CONFIG.version) location.reload();
+    const changed = cfg.version !== CONFIG.version || cfg.settings_rev !== CONFIG.settings_rev;
+    if (CONFIG.version && changed) location.reload();
     CONFIG = cfg;
   } catch (e) {
     /* server restarting; try again later */

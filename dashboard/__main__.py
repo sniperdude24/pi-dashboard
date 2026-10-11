@@ -17,4 +17,4 @@ logging.basicConfig(
     format="%(levelname)s %(name)s: %(message)s",
 )
 args.data.mkdir(parents=True, exist_ok=True)
-server.serve(settings.load(args.settings), args.data)
+server.serve(settings.Settings(args.settings), args.data)

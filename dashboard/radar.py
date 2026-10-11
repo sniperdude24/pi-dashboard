@@ -20,6 +20,7 @@ LAYER = "conus_bref_qcd"
 EARTH_RADIUS = 6378137
 HALF_WIDTH_M = 250_000  # map metres from home to the picture's edge
 IMAGE_PX = 1200
+FRAMES = 12  # pictures in the loop, spread evenly over the loop length
 
 
 def _to_mercator(lat, lon):
@@ -38,8 +39,7 @@ def _to_latlon(x, y):
 class Radar:
     def __init__(self, settings, data_dir: Path):
         loc = settings["location"]
-        self.frames_wanted = settings["weather"]["radar_frames"]
-        self.spacing = timedelta(minutes=settings["weather"]["radar_minutes_between_frames"])
+        self.weather = settings["weather"]  # read each time: the screen can change it
         self.dir = data_dir / "radar"
         self.dir.mkdir(parents=True, exist_ok=True)
         self.index_path = data_dir / "radar.json"
@@ -66,12 +66,13 @@ class Radar:
 
     def pick(self, times):
         """Newest first, then going back in time at least `spacing` apart."""
+        spacing = timedelta(minutes=self.weather["radar_loop_minutes"] / (FRAMES - 1))
         picked = []
         for t in reversed(times):
             when = datetime.fromisoformat(t.replace("Z", "+00:00"))
-            if not picked or picked[-1][1] - when >= self.spacing - timedelta(seconds=90):
+            if not picked or picked[-1][1] - when >= spacing - timedelta(seconds=90):
                 picked.append((t, when))
-            if len(picked) == self.frames_wanted:
+            if len(picked) == FRAMES:
                 break
         return list(reversed(picked))
 

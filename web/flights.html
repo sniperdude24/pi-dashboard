@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flights</title>
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="/static/css/common.css">
+<link rel="stylesheet" href="/static/css/flights.css">
+</head>
+<body>
+<div id="stage">
+  <div id="flights">
+
+    <section id="map-panel" class="panel">
+      <div id="map"></div>
+      <div class="map-title">Planes overhead <span id="count"></span></div>
+      <div class="map-legend">
+        <span class="lg-ground">Ground</span><span class="lg-low">Low</span><span class="lg-mid">Mid</span><span class="lg-high">High</span>
+      </div>
+      <div class="map-buttons">
+        <button id="zoom-out" class="btn" aria-label="Zoom out"></button>
+        <button id="zoom-in" class="btn" aria-label="Zoom in"></button>
+      </div>
+      <div class="map-credit">Map: Esri</div>
+    </section>
+
+    <section id="list-panel" class="panel">
+      <div class="label">Closest to you <span class="hint">· tap for details</span></div>
+      <div id="list"></div>
+    </section>
+
+  </div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="overlay-head">
+      <div class="overlay-title"></div>
+      <button class="btn" id="overlay-close" aria-label="Close"></button>
+    </div>
+    <div class="overlay-body"></div>
+  </div>
+</div>
+
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/flights.js"></script>
+</body>
+</html>

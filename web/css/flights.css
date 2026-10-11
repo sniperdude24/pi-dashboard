@@ -1,0 +1,90 @@
+:root {
+  --alt-ground: #888780;
+  --alt-low: #7fb2e8;
+  --alt-mid: #5dcaa5;
+  --alt-high: #e5a43a;
+  --alt-emergency: #e24b4a;
+}
+
+#flights { display: flex; gap: 16px; padding: 16px; height: 720px; }
+
+/* ---- Map ---- */
+#map-panel { width: 1150px; position: relative; overflow: hidden; }
+#map { position: absolute; inset: 0; background: #0e1419; }
+.leaflet-container { background: #0e1419; font-family: inherit; }
+.map-title {
+  position: absolute; top: 18px; left: 22px; z-index: 500;
+  font-size: 28px; font-weight: 600;
+  background: rgba(13, 17, 22, 0.8); padding: 8px 16px; border-radius: 12px;
+}
+.map-title span { color: var(--text-2); font-weight: 400; }
+.map-legend {
+  position: absolute; top: 18px; right: 22px; z-index: 500;
+  display: flex; gap: 16px; font-size: 20px; color: var(--text-2);
+  background: rgba(13, 17, 22, 0.8); padding: 10px 14px; border-radius: 12px;
+}
+.map-legend span::before {
+  content: ""; display: inline-block; width: 14px; height: 14px; border-radius: 7px;
+  margin-right: 7px; vertical-align: -1px; background: var(--c);
+}
+.lg-ground { --c: var(--alt-ground); }
+.lg-low { --c: var(--alt-low); }
+.lg-mid { --c: var(--alt-mid); }
+.lg-high { --c: var(--alt-high); }
+.map-buttons { position: absolute; right: 20px; bottom: 20px; z-index: 500; display: flex; gap: 14px; }
+.map-credit { position: absolute; left: 22px; bottom: 14px; z-index: 500; font-size: 15px; color: var(--text-3); }
+
+.home-dot { background: #fff; border: 4px solid #0d1116; border-radius: 50%; box-shadow: 0 0 0 3px #fff; }
+.ring-label { color: var(--text-2); font-size: 19px; white-space: nowrap; text-shadow: 0 0 4px #0e1419; }
+
+/* A plane: arrow pointing the way it flies, plus its flight number. */
+.plane { position: relative; width: 56px; height: 56px; }
+.plane svg { position: absolute; left: 10px; top: 10px; width: 36px; height: 36px; fill: var(--c); transition: transform 1s; }
+.plane .tag {
+  position: absolute; left: 50px; top: 14px; font-size: 19px; white-space: nowrap;
+  color: var(--text); text-shadow: 0 0 4px #0e1419, 0 0 4px #0e1419;
+}
+.plane.no-tag .tag { display: none; }
+.plane.ground { --c: var(--alt-ground); }
+.plane.low { --c: var(--alt-low); }
+.plane.mid { --c: var(--alt-mid); }
+.plane.high { --c: var(--alt-high); }
+.plane.emergency { --c: var(--alt-emergency); }
+.plane.emergency::after {
+  content: ""; position: absolute; inset: 0; border: 3px solid var(--alt-emergency);
+  border-radius: 50%; animation: pulse 1.2s infinite;
+}
+@keyframes pulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+
+/* ---- List ---- */
+#list-panel { flex: 1; padding: 22px 26px 14px; display: flex; flex-direction: column; min-width: 0; }
+.hint { font-size: 19px; color: var(--text-3); }
+#list { flex: 1; display: flex; flex-direction: column; margin-top: 8px; }
+.row {
+  flex: 1; max-height: 112px; display: flex; align-items: center; gap: 18px;
+  border-bottom: 1px solid var(--line); padding: 0 10px; margin: 0 -10px; border-radius: 12px;
+}
+.row:last-child { border-bottom: 0; }
+.row:active { background: var(--panel-2); }
+.row .swatch { width: 10px; align-self: stretch; margin: 16px 0; border-radius: 5px; background: var(--c); flex: none; }
+.row .who { flex: 1; min-width: 0; }
+.row .cs { font-size: 30px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.row .what { font-size: 21px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .alt, .row .dist { text-align: right; font-size: 25px; white-space: nowrap; }
+.row .alt { width: 150px; }
+.row .dist { width: 110px; }
+.row small { display: block; font-size: 19px; color: var(--text-3); }
+.badge { font-size: 16px; font-weight: 600; padding: 3px 9px; border-radius: 8px; }
+.badge.mil { background: #3c3f22; color: #d9dc9a; }
+.badge.emg { background: #5c1a1a; color: #ffc9c4; }
+.empty { margin: auto; text-align: center; font-size: 26px; color: var(--text-3); line-height: 1.5; }
+.empty .icon { width: 64px; height: 64px; margin: 0 auto 12px; }
+
+/* ---- Plane details pop-up ---- */
+.detail-route { display: flex; align-items: center; gap: 28px; margin: 0 0 28px; color: var(--text); }
+.detail-route .code { font-size: 64px; font-weight: 600; line-height: 1; }
+.detail-route .city { font-size: 24px; color: var(--text-2); }
+.detail-route .icon { width: 56px; height: 56px; color: var(--text-3); }
+.detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px 32px; }
+.detail-grid div { font-size: 32px; color: var(--text); }
+.detail-grid span { display: block; font-size: 21px; color: var(--text-3); }

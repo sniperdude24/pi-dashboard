@@ -33,7 +33,9 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none; /* swipes change pages; nothing scrolls by accident */
 }
+.overlay-body, .scroll { touch-action: pan-y; }
 
 #stage {
   position: absolute;

@@ -3,9 +3,17 @@
 A touchscreen dashboard for a Raspberry Pi with a 1920 × 720 screen.
 The Pi fetches and stores its own data; nothing else needs to be installed anywhere.
 
+The screen (`/`) rotates through the pages, each for as long as you choose. Touch it to
+show a control bar (previous / next / pause / settings), or swipe to change pages.
+
 Pages so far:
 - **Weather** (`/weather`): radar loop, current conditions, alerts, next 12 hours and 7 days,
   from the US National Weather Service and NOAA (free, no account).
+- **Flights** (`/flights`): live planes around home from an ADS-B feed (tar1090 / ultrafeeder
+  `aircraft.json`), with airline routes from adsbdb.com when they make sense.
+- **Settings** (`/settings`): page order and timing, what each page shows, night dimming.
+  Changes save to `settings.yaml`. Only the touchscreen itself can change settings
+  (other computers see them read-only) unless `allow_settings_from_network: true`.
 
 ## Install, update, remove
 

@@ -170,7 +170,7 @@ function initRadarMap() {
   const loc = CONFIG.location;
   const map = L.map("radar-map", {
     center: [loc.latitude, loc.longitude],
-    zoom: 8,
+    zoom: CONFIG.weather.radar_zoom,
     minZoom: 8, // the radar pictures cover zoom 8 and closer
     maxZoom: 10,
     zoomControl: false,
@@ -256,9 +256,26 @@ function setPlaying(on) {
 
 // ---------- Start ----------
 
+function radarSpan() {
+  const mins = CONFIG.weather.radar_loop_minutes;
+  if (mins < 50) return `last ${mins} min`;
+  const hours = Math.round(mins / 30) / 2;
+  return hours === 1 ? "last hour" : `last ${hours} hours`;
+}
+
+// Hide the parts turned off in settings; the rest spreads out to fill the space.
+function applyLayout() {
+  const w = CONFIG.weather, page = document.getElementById("weather");
+  page.classList.toggle("no-radar", !w.show_radar);
+  page.classList.toggle("no-hourly", !w.show_hourly);
+  page.classList.toggle("no-daily", !w.show_daily);
+  page.classList.toggle("no-forecast-text", !w.show_forecast_text);
+}
+
 async function start() {
   await watchVersion();
-  document.getElementById("radar-sub").textContent = "· last hour";
+  applyLayout();
+  document.getElementById("radar-sub").textContent = `· ${radarSpan()}`;
   document.getElementById("radar-zoom-in").innerHTML = icon("zoom-in");
   document.getElementById("radar-zoom-out").innerHTML = icon("zoom-out");
   document.getElementById("overlay-close").innerHTML = icon("x");
@@ -274,12 +291,15 @@ async function start() {
     if (row) openDay(+row.dataset.i);
   };
 
-  initRadarMap();
-  await Promise.all([loadWeather(), loadRadar()]);
-  radarTick();
+  if (CONFIG.weather.show_radar) {
+    initRadarMap();
+    await loadRadar();
+    radarTick();
+    setInterval(loadRadar, 2 * 60 * 1000);
+  }
+  await loadWeather();
   setInterval(loadWeather, 60 * 1000);
-  setInterval(loadRadar, 2 * 60 * 1000);
-  setInterval(watchVersion, 5 * 60 * 1000);
+  setInterval(watchVersion, 60 * 1000);
   // Keep "measured at" ages and sunrise/sunset fresh between data updates.
   setInterval(() => W && renderNow(), 60 * 1000);
 }

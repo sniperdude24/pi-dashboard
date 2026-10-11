@@ -22,7 +22,7 @@ main() {
 
     local port
     port="$(cd "$app" && .venv/bin/python -c \
-        "import sys; from pathlib import Path; from dashboard import settings; print(settings.load(Path(sys.argv[1]))['port'])" \
+        "import sys; from pathlib import Path; from dashboard import settings; print(settings.Settings(Path(sys.argv[1]))['port'])" \
         "$home_dir/settings.yaml")"
     if ! systemctl is-active --quiet "$service" && ss -ltnH "sport = :$port" | grep -q .; then
         echo "Port $port is already used by another program. Change 'port' in"

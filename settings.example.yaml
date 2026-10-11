@@ -1,5 +1,6 @@
 # Pi Dashboard settings
-# This is the only settings file. After changing it, restart with:
+# Most of these can be changed on the touchscreen (gear button). If you edit
+# this file by hand, restart afterwards with:
 #   sudo systemctl restart pi-dashboard
 
 # Web address port. The screen opens http://localhost:8090
@@ -14,15 +15,53 @@ location:
 # 12h or 24h
 clock: 12h
 
+# Settings can only be changed on the touchscreen. Set to true to also allow
+# changing them from other computers on your network.
+allow_settings_from_network: false
+
+# Pages rotate in this order; each shows for `seconds`.
+pages:
+  resume_after_touch_seconds: 120
+  list:
+    - name: weather
+      enabled: true
+      seconds: 60
+    - name: flights
+      enabled: true
+      seconds: 30
+
 weather:
   # How often to fetch forecasts, current conditions and alerts.
   refresh_minutes: 5
-  # Radar loop: how many pictures, and how far apart in minutes.
-  radar_frames: 12
-  radar_minutes_between_frames: 5
+  show_radar: true
+  show_hourly: true
+  show_daily: true
+  show_forecast_text: true
+  # How far back the radar loop goes (30 to 120 minutes).
+  radar_loop_minutes: 60
+  # 8 = whole region, 10 = close up
+  radar_zoom: 8
 
-# Map background behind the radar (Esri, free, no account).
-# Labels are drawn on top of the rain.
+flights:
+  # The plane feed your mini PC already publishes (read only).
+  feed_url: http://192.168.1.76:8080/data/aircraft.json
+  range_miles: 50
+  list_count: 6
+  # Hide planes above this height; 0 shows all.
+  max_altitude_ft: 0
+  show_labels: true
+  # Look up airline routes (e.g. Atlanta to Chicago) from adsbdb.com.
+  route_lookup: true
+
+screen:
+  # Darken the screen between these times (this monitor has no brightness
+  # control the Pi can use, so the picture itself is darkened).
+  night_dim: false
+  night_start: "22:00"
+  night_end: "06:30"
+  night_brightness: 40
+
+# Map background (Esri, free, no account). Labels are drawn on top.
 map:
   base_tiles: https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}
   label_tiles: https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}

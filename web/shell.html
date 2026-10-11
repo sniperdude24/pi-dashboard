@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Dashboard</title>
+<link rel="stylesheet" href="/static/css/common.css">
+<link rel="stylesheet" href="/static/css/shell.css">
+</head>
+<body>
+<div id="stage">
+  <div id="pages"></div>
+
+  <!-- Night dimming: a dark sheet over everything that taps pass through. -->
+  <div id="dim"></div>
+
+  <div id="paused-badge" hidden></div>
+
+  <!-- Appears for a few seconds after any touch. -->
+  <div id="bar" class="hidden">
+    <button class="btn" id="bar-prev" aria-label="Previous page"></button>
+    <div id="bar-dots"></div>
+    <button class="btn" id="bar-next" aria-label="Next page"></button>
+    <button class="btn" id="bar-pause" aria-label="Pause or resume rotation"></button>
+    <button class="btn accent" id="bar-settings" aria-label="Settings"></button>
+  </div>
+
+  <div id="settings-layer" hidden></div>
+</div>
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/shell.js"></script>
+</body>
+</html>
