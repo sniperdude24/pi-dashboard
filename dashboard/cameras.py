@@ -41,19 +41,32 @@ def _with_login(url, user, password):
 
 
 class Timelapse:
-    """Keeps data/backyard/last_hour.mp4 in step with the timelapse server."""
+    """Keeps data/backyard/last_hour_<version>.mp4 in step with the timelapse
+    server. The previous versions stay for a while: the screen finishes playing
+    the hour it started before switching, and must keep getting the same file."""
+
+    KEEP_VERSIONS = 3
 
     def __init__(self, settings, data_dir: Path):
         self.settings = settings
         self.dir = data_dir / "backyard"
         self.dir.mkdir(parents=True, exist_ok=True)
-        self.path = self.dir / "last_hour.mp4"
         self.meta_path = self.dir / "last_hour.json"
         try:
             self.meta = json.loads(self.meta_path.read_text())
         except (OSError, ValueError):
             self.meta = {"version": 0, "updated": None, "size": None}
+        old = self.dir / "last_hour.mp4"  # from before versions had their own files
+        if old.exists():
+            old.replace(self.path_for(self.meta["version"]))
         self.error = None
+
+    def path_for(self, version):
+        return self.dir / f"last_hour_{int(version)}.mp4"
+
+    @property
+    def path(self):
+        return self.path_for(self.meta["version"])
 
     def _request(self, extra_headers=None):
         cfg = self.settings["backyard"]["timelapse"]
@@ -88,11 +101,15 @@ class Timelapse:
         except Exception as e:
             self.error = f"Can't reach the timelapse ({e})."
             return
-        tmp = self.path.with_suffix(".tmp")
+        version = self.meta["version"] + 1
+        tmp = self.dir / "last_hour.tmp"
         tmp.write_bytes(data)
-        tmp.replace(self.path)
-        self.meta = {"version": self.meta["version"] + 1, "updated": time.time(), "size": len(data)}
+        tmp.replace(self.path_for(version))
+        self.meta = {"version": version, "updated": time.time(), "size": len(data)}
         self.meta_path.write_text(json.dumps(self.meta))
+        for f in self.dir.glob("last_hour_*.mp4"):
+            if f.stem.split("_")[-1].isdigit() and int(f.stem.split("_")[-1]) <= version - self.KEEP_VERSIONS:
+                f.unlink()
         self.error = None
         log.info("backyard: new last-hour timelapse (%.1f MB)", len(data) / 1e6)
 

@@ -263,7 +263,10 @@ def make_handler(app: App):
             elif path == "/api/backyard":
                 self.send_json(app.backyard_status())
             elif path == "/camera/last_hour.mp4":
-                self.send_video(app.timelapse.path)
+                # ?v=<version>: keep serving the hour the screen started playing
+                m = re.search(r"[?&]v=(\d+)", self.path)
+                wanted = app.timelapse.path_for(m.group(1)) if m else None
+                self.send_video(wanted if wanted and wanted.exists() else app.timelapse.path)
             elif path == "/camera/live.mp4":
                 self.send_live()
             elif path == "/api/radar":

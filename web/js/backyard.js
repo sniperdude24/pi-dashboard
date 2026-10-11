@@ -93,6 +93,7 @@ function watchLive() {
 
 function loadHour(version) {
   B.hourVersion = version;
+  B.hourUpdated = B.status.timelapse.updated; // when this hour was fetched
   const v = $("hour");
   v.src = `/camera/last_hour.mp4?v=${version}`;
   if (B.visible) v.play().catch(() => {});
@@ -108,11 +109,20 @@ function hourEnded() {
   }
 }
 
-// The timeline: which real time of day is on screen right now.
+// The timeline: which real time of day is on screen right now, matching the
+// camera's own clock stamp to within about a minute. Checked against the
+// stamps on 2026-10-11: the newest frame is ~1.5 min older than the download,
+// and the hour is built from whole 5-minute blocks (a few frames get skipped,
+// so 58.7 s of video really spans 60 minutes).
+const END_LAG_MS = 60 * 1000;
+const BLOCK_MS = 5 * 60 * 1000;
+
 function updateTimeline() {
-  const v = $("hour"), t = B.status && B.status.timelapse;
-  if (!t || !t.updated || !v.duration) return;
-  const end = t.updated * 1000, start = end - v.duration * SPEED * 1000;
+  const v = $("hour");
+  if (!B.hourUpdated || !v.duration) return;
+  const end = B.hourUpdated * 1000 - END_LAG_MS;
+  const span = Math.max(1, Math.round((v.duration * SPEED * 1000) / BLOCK_MS)) * BLOCK_MS;
+  const start = end - span;
   const frac = Math.min(1, v.currentTime / v.duration);
   $("hour-span").textContent = `${fmtTime(new Date(start))} – ${fmtTime(new Date(end))}`;
   $("hour-start").textContent = fmtTime(new Date(start));
