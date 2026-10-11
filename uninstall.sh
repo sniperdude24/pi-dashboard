@@ -21,6 +21,7 @@ main() {
     fi
 
     echo "Stopping and removing the background service..."
+    [ -f "$app/kiosk.sh" ] && bash "$app/kiosk.sh" off >/dev/null 2>&1 || true
     sudo systemctl disable --now "$service" 2>/dev/null || true
     sudo rm -f "/etc/systemd/system/$service.service"
     sudo systemctl daemon-reload
@@ -29,7 +30,8 @@ main() {
         rm -rf "$home_dir"
         echo "Pi Dashboard removed completely."
     else
-        rm -rf "$app" "$home_dir/update.sh" "$home_dir/uninstall.sh"
+        rm -rf "$app" "$home_dir/update.sh" "$home_dir/uninstall.sh" "$home_dir/kiosk.sh" \
+            "$home_dir/data/browser" "$home_dir/data/kiosk-stopped"
         echo "Pi Dashboard removed. Your settings.yaml and data/ are still in $home_dir"
     fi
 }

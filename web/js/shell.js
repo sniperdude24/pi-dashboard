@@ -25,7 +25,7 @@ function buildPages() {
   box.innerHTML = "";
   shell.frames = shell.pages.map((p) => {
     const f = document.createElement("iframe");
-    f.src = `/${p.name}`;
+    f.src = `/${p.name}${KIOSK ? "?kiosk" : ""}`;
     f.title = p.title;
     f.addEventListener("load", () => watchTouches(f.contentDocument));
     box.appendChild(f);
@@ -116,7 +116,7 @@ function openSettings() {
   updateDim();
   $("bar").classList.add("hidden");
   const layer = $("settings-layer");
-  layer.innerHTML = '<iframe src="/settings" title="Settings"></iframe>';
+  layer.innerHTML = `<iframe src="/settings${KIOSK ? "?kiosk" : ""}" title="Settings"></iframe>`;
   layer.hidden = false;
 }
 

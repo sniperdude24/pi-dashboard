@@ -18,6 +18,7 @@ main() {
         echo "Created $home_dir/settings.yaml"
     fi
     ln -sfn app/update.sh "$home_dir/update.sh"
+    ln -sfn app/kiosk.sh "$home_dir/kiosk.sh"
     ln -sfn app/uninstall.sh "$home_dir/uninstall.sh"
 
     local port

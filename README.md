@@ -31,6 +31,21 @@ curl -sSL https://raw.githubusercontent.com/sniperdude24/pi-dashboard/main/insta
 
 Uninstall asks whether to keep your settings and saved data (handy when moving to another Pi).
 
+## Full screen at startup (per Pi)
+
+```bash
+~/pi-dashboard/kiosk.sh on
+```
+
+The Pi then opens the dashboard full screen every time it starts (it needs to log in to
+the desktop automatically, which Raspberry Pi OS does by default). `kiosk.sh off` undoes it.
+To get back to the desktop by touch: Settings → Screen → Exit to desktop. The
+"Pi Dashboard" icon on the desktop brings it back.
+
+If the screen shows the wrong size (some screens don't report their size to the Pi),
+add `video=HDMI-A-2:1920x720@60` to the end of the single line in
+`/boot/firmware/cmdline.txt` (HDMI-A-1 for the other port) and restart.
+
 ## Where things live
 
 ```
@@ -39,6 +54,7 @@ Uninstall asks whether to keep your settings and saved data (handy when moving t
 ├── settings.yaml    all settings, one file
 ├── data/            all saved data
 ├── update.sh
+├── kiosk.sh
 └── uninstall.sh
 ```
 

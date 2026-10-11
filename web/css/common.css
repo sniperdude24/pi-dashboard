@@ -36,6 +36,7 @@ html, body {
   touch-action: none; /* swipes change pages; nothing scrolls by accident */
 }
 .overlay-body, .scroll { touch-action: pan-y; }
+.kiosk, .kiosk * { cursor: none !important; }
 
 #stage {
   position: absolute;

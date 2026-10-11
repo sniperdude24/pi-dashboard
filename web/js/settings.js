@@ -143,7 +143,31 @@ function renderPages() {
 
 function renderFields(section) {
   const fields = INFO.fields.filter((f) => f.section === section);
-  return `<div class="grid">${fields.map(fieldHTML).join("")}</div>`;
+  let html = `<div class="grid">${fields.map(fieldHTML).join("")}</div>`;
+  if (section === "screen" && KIOSK) {
+    html += `<div class="field push-down"><div class="name">Close the dashboard and show the desktop
+      <small>To bring it back, tap Pi Dashboard on the desktop, or restart the Pi.</small></div>
+      <button class="wide-btn" data-act="exit-kiosk">Exit to desktop</button></div>`;
+  }
+  return html;
+}
+
+let exitArmed = null; // first tap arms the button, second tap exits
+
+async function exitKiosk(btn) {
+  if (!exitArmed) {
+    btn.textContent = "Tap again to exit";
+    btn.classList.add("armed");
+    exitArmed = setTimeout(() => {
+      exitArmed = null;
+      render();
+    }, 4000);
+    return;
+  }
+  clearTimeout(exitArmed);
+  exitArmed = null;
+  btn.textContent = "Closing…";
+  await fetch("/api/exit-kiosk", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
 }
 
 function renderAbout() {
@@ -163,6 +187,10 @@ function renderAbout() {
 }
 
 function render() {
+  if (exitArmed) {
+    clearTimeout(exitArmed); // any other tap cancels a half-done "Exit to desktop"
+    exitArmed = null;
+  }
   $("sections").innerHTML = SECTIONS.map(
     (s) => `<button class="section-btn${s.id === current ? " on" : ""}" data-section="${s.id}">${icon(s.icon)}${s.title}</button>`,
   ).join("");
@@ -183,6 +211,10 @@ function onTap(e) {
   const el = e.target.closest("[data-act]");
   if (!el || !INFO.can_edit) return;
   const act = el.dataset.act, id = el.dataset.id;
+  if (act === "exit-kiosk") {
+    exitKiosk(el);
+    return;
+  }
 
   if (act.startsWith("page-")) {
     const i = +el.dataset.i, j = act === "page-up" ? i - 1 : i + 1;

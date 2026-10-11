@@ -5,6 +5,7 @@ import logging
 import mimetypes
 import re
 import socket
+import subprocess
 import threading
 import time
 from http import HTTPStatus
@@ -119,6 +120,12 @@ class App:
             },
         }
 
+    def exit_kiosk(self):
+        """Close the full-screen browser (see kiosk.sh) to show the desktop."""
+        data = self.data_dir.resolve()
+        (data / "kiosk-stopped").touch()
+        subprocess.run(["pkill", "-f", "--", f"--user-data-dir={data / 'browser'}"], check=False)
+
     def tile(self, layer, z, x, y):
         """Map background squares: downloaded once, then kept forever."""
         path = self.tiles_dir / layer / str(z) / str(x) / str(y)
@@ -191,12 +198,16 @@ def make_handler(app: App):
                 self.send_error(HTTPStatus.NOT_FOUND)
 
         def do_POST(self):
-            if self.path != "/api/settings":
+            if self.path not in ("/api/settings", "/api/exit-kiosk"):
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
             # JSON-only means other websites can't post here from a browser.
             if not app.can_edit(self.client) or self.headers.get("Content-Type") != "application/json":
                 self.send_json({"error": "Settings can only be changed on the touchscreen."}, HTTPStatus.FORBIDDEN)
+                return
+            if self.path == "/api/exit-kiosk":
+                app.exit_kiosk()
+                self.send_json({"ok": True})
                 return
             try:
                 body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))

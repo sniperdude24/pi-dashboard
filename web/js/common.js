@@ -68,6 +68,14 @@ function showOverlayHTML(title, html) {
 
 const EMBEDDED = window.top !== window; // running inside the rotating screen
 
+// Full screen on the Pi's own screen (kiosk.sh opens /?kiosk): no pointer,
+// no long-press menu.
+const KIOSK = new URLSearchParams(location.search).has("kiosk");
+if (KIOSK) {
+  document.documentElement.classList.add("kiosk");
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
 // Load page settings, and reload the page by itself after an update or a
 // settings change. Inside the rotating screen, the screen does the reloading.
 async function watchVersion() {
