@@ -27,10 +27,14 @@ STALL_SECONDS = 20  # no picture for this long means the recorder hung
 QUICK_START = ["-analyzeduration", "500000", "-probesize", "65536"]
 
 # The last hour arrives as 1920x1080 at 60 fps but is shown at 936x527.
-# Decoding that took ~42% of a core while on screen; a copy at the shown
-# size and 30 fps costs a short burst every 5 minutes instead.
-SHRINK = ["-vf", "scale=960:-2,fps=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-          "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+# Playing that took ~111% of a core while on screen; a copy at the shown size
+# and 30 fps plays at ~35%. Making the copy is mostly reading the big original,
+# so skip frames nothing depends on, drop to 30 fps before resizing, and use a
+# quick resize: 47 core-seconds per hour on the Pi instead of 71, with every
+# distinct picture kept (measured 2026-10-11).
+SHRINK_INPUT = ["-skip_frame", "noref"]
+SHRINK = ["-vf", "fps=30,scale=960:-2:flags=fast_bilinear", "-c:v", "libx264", "-preset", "veryfast",
+          "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
 
 
 def hide_login(text):
@@ -117,7 +121,7 @@ class Timelapse:
         small = self.dir / "last_hour_small.tmp"
         started = time.time()
         done = subprocess.run(
-            ["nice", "-n", "10", "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(src),
+            ["nice", "-n", "10", "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *SHRINK_INPUT, "-i", str(src),
              "-an", *SHRINK, "-threads", "2", "-f", "mp4", str(small)],
             capture_output=True, text=True, timeout=300,
         )
