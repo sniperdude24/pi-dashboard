@@ -68,7 +68,8 @@ EOF
             # Reopen the browser if it ever closes, unless "Exit to desktop" was used.
             while [ ! -f "$stop_flag" ]; do
                 calm_restore_prompt
-                chromium --kiosk "http://localhost:$port/?kiosk" \
+                # Raspberry Pi OS's desktop is Wayland; without this Chromium looks for X11.
+                chromium --ozone-platform=wayland --kiosk "http://localhost:$port/?kiosk" \
                     --user-data-dir="$profile" \
                     --noerrdialogs --disable-infobars --no-first-run --no-default-browser-check \
                     --disable-session-crashed-bubble --disable-features=Translate \
