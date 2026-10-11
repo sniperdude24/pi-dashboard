@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather</title>
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="/static/css/common.css">
+<link rel="stylesheet" href="/static/css/weather.css">
+</head>
+<body>
+<div id="stage">
+  <div id="weather">
+
+    <!-- Left: radar loop -->
+    <section id="radar" class="panel">
+      <div id="radar-map"></div>
+      <div class="radar-title">Radar <span id="radar-sub"></span></div>
+      <div class="radar-legend">
+        <span>Light</span><span class="legend-bar"></span><span>Heavy</span>
+      </div>
+      <div class="radar-credit">Map: Esri · Radar: NOAA</div>
+      <div id="radar-empty" class="radar-empty">Loading radar…</div>
+      <div class="radar-controls">
+        <button id="radar-play" class="btn primary" aria-label="Play or pause"></button>
+        <div class="radar-track"><div id="radar-progress"></div></div>
+        <div id="radar-time" class="radar-time"></div>
+        <button id="radar-zoom-out" class="btn" aria-label="Zoom out"></button>
+        <button id="radar-zoom-in" class="btn" aria-label="Zoom in"></button>
+      </div>
+    </section>
+
+    <!-- Middle: alerts and current conditions -->
+    <section id="middle">
+      <div id="alert" hidden></div>
+      <div id="now" class="panel">
+        <div class="label" id="now-label">Now</div>
+        <div class="now-main">
+          <div id="now-icon"></div>
+          <div id="now-temp">--°</div>
+        </div>
+        <div id="now-text"></div>
+        <div id="now-forecast"></div>
+        <div id="now-grid"></div>
+        <div id="now-foot"></div>
+      </div>
+    </section>
+
+    <!-- Right: hourly and 7-day forecast -->
+    <section id="right">
+      <div id="hourly-panel" class="panel">
+        <div class="label">Next 12 hours</div>
+        <div id="hourly"></div>
+      </div>
+      <div id="daily-panel" class="panel">
+        <div class="label">7 days <span class="hint">· tap a day for details</span></div>
+        <div id="daily"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="overlay-head">
+      <div class="overlay-title"></div>
+      <button class="btn" id="overlay-close" aria-label="Close"></button>
+    </div>
+    <div class="overlay-body"></div>
+  </div>
+</div>
+
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/weather.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Pi Dashboard settings
+# This is the only settings file. After changing it, restart with:
+#   sudo systemctl restart pi-dashboard
+
+# Web address port. The screen opens http://localhost:8090
+port: 8090
+
+# Your location (the Weather Service uses 4 decimal places).
+location:
+  name: Corryton
+  latitude: 36.0887
+  longitude: -83.8194
+
+# 12h or 24h
+clock: 12h
+
+weather:
+  # How often to fetch forecasts, current conditions and alerts.
+  refresh_minutes: 5
+  # Radar loop: how many pictures, and how far apart in minutes.
+  radar_frames: 12
+  radar_minutes_between_frames: 5
+
+# Map background behind the radar (Esri, free, no account).
+# Labels are drawn on top of the rain.
+map:
+  base_tiles: https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}
+  label_tiles: https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}
