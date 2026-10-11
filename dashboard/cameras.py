@@ -18,6 +18,8 @@ from . import nws
 
 log = logging.getLogger(__name__)
 
+STALL_SECONDS = 20  # the recorder takes ~6s to start sending; more than this is a hang
+
 
 def hide_login(text):
     """ffmpeg repeats the address in its errors, login included: blank it out
@@ -141,7 +143,10 @@ class Live:
         ]
         return [
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-rtsp_transport", "tcp",
-            "-fflags", "nobuffer", "-flags", "low_delay", "-i", self.url(),
+            "-fflags", "nobuffer", "-flags", "low_delay",
+            # Reolink recorders send the stream without timestamps; use the Pi's clock.
+            "-use_wallclock_as_timestamps", "1",
+            "-i", self.url(),
             "-an", *video, "-f", "mp4",
             "-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "500000",
             "pipe:1",
@@ -159,8 +164,19 @@ class Live:
             raise RuntimeError(self.error) from None
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.error = None
+        last_data = time.time()
+
+        def watchdog():  # the recorder went quiet: stop, and the page reconnects
+            while proc.poll() is None:
+                if time.time() - last_data > STALL_SECONDS:
+                    log.info("backyard live: no picture for %ss, reconnecting", STALL_SECONDS)
+                    proc.kill()
+                time.sleep(2)
+
+        threading.Thread(target=watchdog, daemon=True).start()
         try:
             while chunk := proc.stdout.read1(64 * 1024):
+                last_data = time.time()
                 write(chunk)
         finally:
             proc.kill()
