@@ -133,7 +133,7 @@ function renderPages() {
       <button class="btn${i === 0 ? " dim" : ""}" data-act="page-up" data-i="${i}" aria-label="Move up">${icon("arrow-up")}</button>
       <button class="btn${i === n - 1 ? " dim" : ""}" data-act="page-down" data-i="${i}" aria-label="Move down">${icon("arrow-down")}</button>
       <div class="gap"></div>
-      ${stepperHTML(`page-${i}`, fmtDuration(p.seconds))}
+      ${p.ends_itself ? '<div class="self-timed">Plays the last hour once</div>' : stepperHTML(`page-${i}`, fmtDuration(p.seconds))}
       <div class="gap"></div>
       ${toggleHTML(`page-${i}`, p.enabled)}</div>`)
     .join("");

@@ -30,7 +30,8 @@ LOCAL_ADDRESSES = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 PAGES = {
     "weather": {"title": "Weather", "icon": "cloud", "file": "weather.html"},
     "flights": {"title": "Flights", "icon": "plane", "file": "flights.html"},
-    "backyard": {"title": "Backyard", "icon": "video", "file": "backyard.html"},
+    # Stays up for one play of the last hour, then says it's done (no timer).
+    "backyard": {"title": "Backyard", "icon": "video", "file": "backyard.html", "ends_itself": True},
 }
 OTHER_FILES = {"/": "shell.html", "/settings": "settings.html"}
 

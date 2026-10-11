@@ -99,14 +99,31 @@ function loadHour(version) {
   if (B.visible) v.play().catch(() => {});
 }
 
-// When the player reaches the end: switch to a newer hour if there is one.
-function hourEnded() {
+// The page stays up for one play of the last hour. It tells the rotating
+// screen when that's done; if the screen is on hold (touched recently or
+// paused) it stays, so the hour simply plays again.
+function pageDone() {
+  if (EMBEDDED) parent.postMessage({ type: "page-done" }, location.origin);
+}
+
+// Coming on screen: play the hour from the start (the newest one, if a new
+// one has arrived). With nothing to play, don't hold up the rotation long.
+function startHourCycle() {
+  clearTimeout(B.doneTimer);
   const latest = B.status ? B.status.timelapse.version : 0;
-  if (latest > B.hourVersion) loadHour(latest);
-  else {
+  if (latest > B.hourVersion) {
+    loadHour(latest);
+  } else if ($("hour").getAttribute("src")) {
     $("hour").currentTime = 0;
     if (B.visible) $("hour").play().catch(() => {});
+  } else {
+    B.doneTimer = setTimeout(pageDone, 15000);
   }
+}
+
+function hourEnded() {
+  if (B.visible) pageDone();
+  startHourCycle(); // plays again if the screen stays here
 }
 
 // The timeline: which real time of day is on screen right now, matching the
@@ -149,8 +166,9 @@ function setVisible(visible) {
   B.visible = visible;
   if (visible) {
     startLive();
-    if ($("hour").getAttribute("src")) $("hour").play().catch(() => {});
+    startHourCycle();
   } else {
+    clearTimeout(B.doneTimer);
     stopLive();
     $("hour").pause();
   }

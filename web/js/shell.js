@@ -1,6 +1,7 @@
 // The rotating screen: shows each page in turn, with a control bar on touch.
 
 const BAR_SECONDS = 8;
+const SELF_ENDING_MAX_SECONDS = 120; // in case a self-ending page never says it's done
 
 const shell = {
   pages: [],      // enabled pages from settings, in order
@@ -60,8 +61,19 @@ function tick() {
   if (shell.settingsOpen || shell.paused || shell.pages.length < 2) return;
   const now = Date.now();
   const page = shell.pages[shell.index];
-  const due = Math.max(shell.shownAt + page.seconds * 1000, shell.lastTouch + CONFIG.resume_after_touch_seconds * 1000);
+  // A page that ends itself (e.g. one play of a video) gets a safety limit instead.
+  const seconds = page.ends_itself ? SELF_ENDING_MAX_SECONDS : page.seconds;
+  const due = Math.max(shell.shownAt + seconds * 1000, shell.lastTouch + CONFIG.resume_after_touch_seconds * 1000);
   if (now >= due) show(shell.index + 1);
+}
+
+// A self-ending page says it's finished: move on, unless rotation is on hold
+// (paused, settings open, or touched recently). Then the page just carries on.
+function pageDone(source) {
+  if (source !== shell.frames[shell.index].contentWindow) return;
+  if (shell.settingsOpen || shell.paused || shell.pages.length < 2) return;
+  if (Date.now() < shell.lastTouch + CONFIG.resume_after_touch_seconds * 1000) return;
+  show(shell.index + 1);
 }
 
 // ---------- Touch, swipe and the control bar ----------
@@ -159,7 +171,9 @@ async function closeSettings() {
 }
 
 window.addEventListener("message", (e) => {
-  if (e.origin === location.origin && e.data && e.data.type === "close-settings") closeSettings();
+  if (e.origin !== location.origin || !e.data) return;
+  if (e.data.type === "close-settings") closeSettings();
+  if (e.data.type === "page-done") pageDone(e.source);
 });
 
 // After an update or a settings change, start fresh so everything picks it up.
