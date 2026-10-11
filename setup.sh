@@ -17,6 +17,7 @@ main() {
         cp "$app/settings.example.yaml" "$home_dir/settings.yaml"
         echo "Created $home_dir/settings.yaml"
     fi
+    chmod 600 "$home_dir/settings.yaml" # it holds camera logins
     ln -sfn app/update.sh "$home_dir/update.sh"
     ln -sfn app/kiosk.sh "$home_dir/kiosk.sh"
     ln -sfn app/uninstall.sh "$home_dir/uninstall.sh"

@@ -29,6 +29,9 @@ pages:
     - name: flights
       enabled: true
       seconds: 30
+    - name: backyard
+      enabled: true
+      seconds: 45
 
 weather:
   # How often to fetch forecasts, current conditions and alerts.
@@ -52,6 +55,19 @@ flights:
   show_labels: true
   # Look up airline routes (e.g. Atlanta to Chicago) from adsbdb.com.
   route_lookup: true
+
+backyard:
+  # The last-hour timelapse from the timelapse server on the mini PC.
+  timelapse:
+    url: http://192.168.1.76:8177/live/Backyard/last_hour.mp4
+    user: dashboard
+    pin: ""           # type the dashboard account's PIN between the quotes
+  # The live picture, from the recorder's copy of the Backyard camera
+  # (not the camera itself: two pulls from the camera damage the recording).
+  live:
+    url: rtsp://192.168.1.176:554/h264Preview_03_sub
+    user: ""          # the recorder's user name, between the quotes
+    password: ""      # the recorder's password, between the quotes
 
 screen:
   # Darken the screen between these times (this monitor has no brightness

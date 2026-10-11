@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backyard</title>
+<link rel="stylesheet" href="/static/css/common.css">
+<link rel="stylesheet" href="/static/css/backyard.css">
+</head>
+<body>
+<div id="stage">
+  <div id="backyard">
+
+    <section class="card">
+      <div class="top">
+        <span class="dot" id="live-dot"></span><span class="t">Live</span>
+        <span class="r" id="live-status">Connecting…</span>
+      </div>
+      <div class="vid">
+        <video id="live" muted playsinline></video>
+        <div class="msg" id="live-msg" hidden></div>
+      </div>
+      <div class="bot">
+        <span class="name">Backyard</span>
+        <span class="r">From the recorder</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="top">
+        <span class="t">Last hour</span><span class="s">60× speed</span>
+        <span class="r" id="hour-span"></span>
+      </div>
+      <div class="vid">
+        <video id="hour" muted playsinline></video>
+        <div class="msg" id="hour-msg" hidden></div>
+      </div>
+      <div class="bot timeline">
+        <span class="edge" id="hour-start"></span>
+        <div class="bar"><div class="fill" id="hour-fill"></div><div class="knob" id="hour-knob"></div></div>
+        <span class="edge" id="hour-end"></span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/backyard.js"></script>
+</body>
+</html>

@@ -11,6 +11,10 @@ Pages so far:
   from the US National Weather Service and NOAA (free, no account).
 - **Flights** (`/flights`): live planes around home from an ADS-B feed (tar1090 / ultrafeeder
   `aircraft.json`), with airline routes from adsbdb.com when they make sense.
+- **Backyard** (`/backyard`): the live camera (left, from the recorder's copy of the camera,
+  passed through by ffmpeg without re-encoding) and the last-hour timelapse (right, downloaded
+  from the reolink-timelapse server with the `dashboard` account). Both only play while the page
+  is on screen. Logins go in `settings.yaml` under `backyard:`.
 - **Settings** (`/settings`): page order and timing, what each page shows, night dimming.
   Changes save to `settings.yaml`. Only the touchscreen itself can change settings
   (other computers see them read-only) unless `allow_settings_from_network: true`.
@@ -59,7 +63,8 @@ add `video=HDMI-A-2:1920x720@60` to the end of the single line in
 ```
 
 The program runs in the background as the `pi-dashboard` service and serves the pages at
-http://localhost:8090. After editing `settings.yaml`:
+http://localhost:8090. Changes typed into `settings.yaml` are picked up within a few seconds
+(a typo is ignored and the previous settings kept). Changing the port or location needs:
 
 ```bash
 sudo systemctl restart pi-dashboard

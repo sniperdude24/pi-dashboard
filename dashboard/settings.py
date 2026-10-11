@@ -2,6 +2,8 @@
 touchscreen without losing the notes written in the file."""
 
 import copy
+import logging
+import os
 import threading
 from pathlib import Path
 
@@ -19,7 +21,21 @@ DEFAULTS = {
         "list": [
             {"name": "weather", "enabled": True, "seconds": 60},
             {"name": "flights", "enabled": True, "seconds": 30},
+            {"name": "backyard", "enabled": True, "seconds": 45},
         ],
+    },
+    "backyard": {
+        "timelapse": {
+            "url": "http://192.168.1.76:8177/live/Backyard/last_hour.mp4",
+            "user": "dashboard",
+            "pin": "",
+        },
+        "live": {
+            # The recorder's copy of the Backyard camera (channel 3, smaller "sub" stream).
+            "url": "rtsp://192.168.1.176:554/h264Preview_03_sub",
+            "user": "",
+            "password": "",
+        },
     },
     "weather": {
         "refresh_minutes": 5,
@@ -74,6 +90,7 @@ EDITABLE = {
 
 PAGE_SECONDS = (10, 600, 5)  # min, max, step for each page's time on screen
 
+log = logging.getLogger(__name__)
 _yaml = YAML()
 _yaml.preserve_quotes = True
 _yaml.width = 4096  # don't wrap long web addresses onto two lines
@@ -87,6 +104,19 @@ def _merge(base, override):
         else:
             base[key] = value
     return base
+
+
+def _replace_in_place(old, new):
+    """Make `old` equal `new` while keeping the same dict objects: parts of the
+    program hold on to whole sections (e.g. settings["weather"])."""
+    for key in list(old):
+        if key not in new:
+            del old[key]
+    for key, value in new.items():
+        if isinstance(value, dict) and isinstance(old.get(key), dict):
+            _replace_in_place(old[key], value)
+        else:
+            old[key] = value
 
 
 def _plain(node):
@@ -110,7 +140,30 @@ class Settings:
 
     def __init__(self, path: Path):
         self.path = path
-        self.values = self._load()
+        try:
+            self.values = self._load()
+        except ValueError as e:
+            raise SystemExit(str(e))
+        self.mtime = path.stat().st_mtime
+
+    def reload_if_changed(self):
+        """Pick up changes typed into settings.yaml by hand, so no restart is
+        needed. Returns True when something changed."""
+        mtime = self.path.stat().st_mtime
+        if mtime == self.mtime:
+            return False
+        with _lock:
+            self.mtime = mtime
+            try:
+                new = self._load()
+            except Exception as e:  # a typo while editing: keep what we had
+                log.warning("settings.yaml has a mistake, keeping the previous settings: %s", e)
+                return False
+            if new == self.values:
+                return False
+            _replace_in_place(self.values, new)
+        log.info("settings.yaml changed; using the new settings")
+        return True
 
     def _load(self):
         with open(self.path, encoding="utf-8") as f:
@@ -118,7 +171,7 @@ class Settings:
         values = _merge(copy.deepcopy(DEFAULTS), _plain(raw))
         loc = values["location"]
         if loc["latitude"] is None or loc["longitude"] is None:
-            raise SystemExit(f"{self.path}: location latitude/longitude must be set")
+            raise ValueError(f"{self.path}: location latitude/longitude must be set")
         # The Weather Service rejects more than 4 decimal places.
         loc["latitude"] = round(float(loc["latitude"]), 4)
         loc["longitude"] = round(float(loc["longitude"]), 4)
@@ -152,7 +205,9 @@ class Settings:
             tmp = self.path.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8", newline="\n") as f:
                 _yaml.dump(raw, f)
+            os.chmod(tmp, self.path.stat().st_mode)  # stays private: it holds logins
             tmp.replace(self.path)
+            self.mtime = self.path.stat().st_mtime
             target = self.values
             for part in parents:
                 target = target[part]

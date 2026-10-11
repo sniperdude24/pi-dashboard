@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from . import __version__, nws
+from .cameras import Live, Timelapse
 from .flights import Flights
 from .radar import Radar
 from .settings import EDITABLE, PAGE_SECONDS, Settings, get
@@ -29,6 +30,7 @@ LOCAL_ADDRESSES = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 PAGES = {
     "weather": {"title": "Weather", "icon": "cloud", "file": "weather.html"},
     "flights": {"title": "Flights", "icon": "plane", "file": "flights.html"},
+    "backyard": {"title": "Backyard", "icon": "video", "file": "backyard.html"},
 }
 OTHER_FILES = {"/": "shell.html", "/settings": "settings.html"}
 
@@ -67,12 +69,30 @@ class App:
         self.weather = Weather(settings, data_dir)
         self.radar = Radar(settings, data_dir)
         self.flights = Flights(settings, data_dir)
+        self.timelapse = Timelapse(settings, data_dir)
+        self.live = Live(settings)
 
     def start_background(self):
         minutes = self.settings["weather"]["refresh_minutes"]
         run_every(minutes * 60, self.weather.refresh, "weather")
         run_every(4 * 60, self.radar.refresh, "radar")
         run_every(2, self.flights.refresh, "flights")
+        run_every(60, self.timelapse.refresh, "timelapse")
+        run_every(5, self.check_settings_file, "settings")
+
+    def check_settings_file(self):
+        """settings.yaml edited by hand: use it now, no restart needed."""
+        if self.settings.reload_if_changed():
+            self.settings_rev += 1  # open pages reload
+            self.live.codec = None  # the camera address may have changed
+            threading.Thread(target=self.timelapse.refresh, daemon=True).start()
+
+    def backyard_status(self):
+        self.live.configured()
+        return {
+            "timelapse": {**self.timelapse.meta, "error": self.timelapse.error},
+            "live": {"error": self.live.error},
+        }
 
     def can_edit(self, client):
         return client in LOCAL_ADDRESSES or self.settings["allow_settings_from_network"]
@@ -161,6 +181,58 @@ def make_handler(app: App):
             ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
             self.send_bytes(path.read_bytes(), ctype, cache)
 
+        def send_video(self, path: Path):
+            """Videos need byte ranges so the browser can loop and skip."""
+            try:
+                data = path.read_bytes()
+            except OSError:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            total, start, end = len(data), 0, len(data) - 1
+            m = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range", ""))
+            if m and (m.group(1) or m.group(2)):
+                if m.group(1):
+                    start = int(m.group(1))
+                    end = min(int(m.group(2)), end) if m.group(2) else end
+                else:
+                    start = max(0, total - int(m.group(2)))
+            if start > end:
+                self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                self.send_header("Content-Range", f"bytes */{total}")
+                self.end_headers()
+                return
+            self.send_response(HTTPStatus.PARTIAL_CONTENT if m else HTTPStatus.OK)
+            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(end - start + 1))
+            if m:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{total}")
+            self.send_header("Cache-Control", "max-age=86400")  # each version has its own ?v=
+            self.end_headers()
+            self.wfile.write(data[start : end + 1])
+
+        def send_live(self):
+            """The live picture, for as long as the viewer keeps the connection open."""
+            started = False
+
+            def write(chunk):
+                nonlocal started
+                if not started:
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header("Content-Type", "video/mp4")
+                    self.send_header("Cache-Control", "no-store")
+                    self.end_headers()
+                    started = True
+                self.wfile.write(chunk)
+
+            try:
+                app.live.stream_to(write)
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the viewer left (page hidden or closed); ffmpeg is stopped
+            except Exception as e:
+                if not started:
+                    self.send_json({"error": str(e)}, HTTPStatus.BAD_GATEWAY)
+
         def send_json(self, obj, status=HTTPStatus.OK):
             self.send_bytes(json.dumps(obj).encode(), "application/json", status=status)
 
@@ -178,6 +250,12 @@ def make_handler(app: App):
                 self.send_json(app.weather.summary)
             elif path == "/api/flights":
                 self.send_json(app.flights.latest)
+            elif path == "/api/backyard":
+                self.send_json(app.backyard_status())
+            elif path == "/camera/last_hour.mp4":
+                self.send_video(app.timelapse.path)
+            elif path == "/camera/live.mp4":
+                self.send_live()
             elif path == "/api/radar":
                 index = app.data_dir / "radar.json"
                 self.send_json(json.loads(index.read_text()) if index.exists() else {"frames": []})

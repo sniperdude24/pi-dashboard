@@ -76,6 +76,19 @@ if (KIOSK) {
   document.addEventListener("contextmenu", (e) => e.preventDefault());
 }
 
+// Calls cb(true/false) when this page comes on or goes off screen. Inside the
+// rotating screen the screen says so; on its own, the browser tab does.
+function onPageVisible(cb) {
+  if (EMBEDDED) {
+    window.addEventListener("message", (e) => {
+      if (e.origin === location.origin && e.data && e.data.type === "visible") cb(e.data.visible);
+    });
+  } else {
+    document.addEventListener("visibilitychange", () => cb(document.visibilityState === "visible"));
+    cb(document.visibilityState === "visible");
+  }
+}
+
 // Load page settings, and reload the page by itself after an update or a
 // settings change. Inside the rotating screen, the screen does the reloading.
 async function watchVersion() {

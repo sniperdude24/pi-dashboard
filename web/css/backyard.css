@@ -1,0 +1,42 @@
+/* Two camera panels, each: label bar, the whole 16:9 picture (936 x 527,
+   nothing trimmed), and a bottom bar filling the rest of the height. */
+#backyard { display: flex; gap: 16px; padding: 16px; height: 720px; }
+
+.card {
+  width: 936px;
+  background: var(--panel);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.top { height: 72px; display: flex; align-items: center; gap: 16px; padding: 0 26px; font-size: 24px; flex: none; }
+.t { font-size: 32px; font-weight: 600; }
+.s { color: var(--text-3); }
+.r { margin-left: auto; color: var(--text-2); }
+.dot { width: 18px; height: 18px; border-radius: 9px; background: var(--text-3); }
+.dot.on { background: #e24b4a; animation: blink 2s infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+
+.vid { width: 936px; height: 527px; background: #000; position: relative; flex: none; }
+.vid video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.msg {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 40px; font-size: 26px; line-height: 1.45; color: var(--text-2);
+  background: #0b0f13;
+}
+.msg[hidden] { display: none; }
+
+.bot { flex: 1; display: flex; align-items: center; gap: 20px; padding: 0 26px; font-size: 24px; }
+.name { color: var(--text-2); }
+.bot .r { color: var(--text-3); }
+.edge { color: var(--text-3); min-width: 80px; }
+.edge:last-child { text-align: right; }
+.bar { flex: 1; height: 12px; border-radius: 6px; background: var(--line); position: relative; }
+.fill { width: 0; height: 12px; border-radius: 6px; background: var(--rain); }
+.bot.timeline { padding-bottom: 30px; }
+.knob {
+  position: absolute; left: 0; top: 20px; transform: translateX(-50%);
+  font-size: 22px; background: var(--line); padding: 4px 12px; border-radius: 10px; white-space: nowrap;
+}
+.knob:empty { display: none; }

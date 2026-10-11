@@ -27,7 +27,10 @@ function buildPages() {
     const f = document.createElement("iframe");
     f.src = `/${p.name}${KIOSK ? "?kiosk" : ""}`;
     f.title = p.title;
-    f.addEventListener("load", () => watchTouches(f.contentDocument));
+    f.addEventListener("load", () => {
+      watchTouches(f.contentDocument);
+      tellVisible(f, f.classList.contains("active"));
+    });
     box.appendChild(f);
     return f;
   });
@@ -38,9 +41,17 @@ function buildPages() {
 function show(i) {
   const n = shell.pages.length;
   shell.index = ((i % n) + n) % n;
-  shell.frames.forEach((f, j) => f.classList.toggle("active", j === shell.index));
+  shell.frames.forEach((f, j) => {
+    f.classList.toggle("active", j === shell.index);
+    tellVisible(f, j === shell.index);
+  });
   [...$("bar-dots").children].forEach((d, j) => d.classList.toggle("on", j === shell.index));
   shell.shownAt = Date.now();
+}
+
+// Pages with video use this to play only while they're on screen.
+function tellVisible(frame, visible) {
+  if (frame.contentWindow) frame.contentWindow.postMessage({ type: "visible", visible }, location.origin);
 }
 
 // Called every second: move on when this page's time is up and nobody has
@@ -131,6 +142,7 @@ function openSettings() {
   shell.settingsOpen = true;
   updateDim();
   hideBar();
+  tellVisible(shell.frames[shell.index], false); // e.g. stop videos under the settings
   const layer = $("settings-layer");
   layer.innerHTML = `<iframe src="/settings${KIOSK ? "?kiosk" : ""}" title="Settings"></iframe>`;
   layer.hidden = false;
@@ -142,6 +154,7 @@ async function closeSettings() {
   layer.innerHTML = "";
   shell.settingsOpen = false;
   shell.lastTouch = Date.now();
+  tellVisible(shell.frames[shell.index], true);
   await checkForChanges();
 }
 

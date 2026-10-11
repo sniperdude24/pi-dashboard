@@ -16,6 +16,7 @@ main() {
 
     local missing=()
     command -v git >/dev/null || missing+=(git)
+    command -v ffmpeg >/dev/null || missing+=(ffmpeg) # live camera picture
     python3 -c "import venv, ensurepip" 2>/dev/null || missing+=(python3-venv)
     if [ ${#missing[@]} -gt 0 ]; then
         echo "Installing system tools: ${missing[*]}"
