@@ -245,6 +245,12 @@ def make_handler(app: App):
             self.send_bytes(json.dumps(obj).encode(), "application/json", status=status)
 
         def do_GET(self):
+            try:
+                self.route_get()
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the browser stopped waiting (page changed or reloaded): normal
+
+        def route_get(self):
             path = self.path.split("?", 1)[0]
             if path in OTHER_FILES:
                 self.send_file(WEB_DIR / OTHER_FILES[path])
