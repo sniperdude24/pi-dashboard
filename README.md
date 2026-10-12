@@ -12,9 +12,10 @@ Pages so far:
 - **Flights** (`/flights`): live planes around home from an ADS-B feed (tar1090 / ultrafeeder
   `aircraft.json`), with airline routes from adsbdb.com when they make sense.
 - **Backyard** (`/backyard`): the live camera (left, from the recorder's copy of the camera,
-  passed through by ffmpeg without re-encoding) and the last-hour timelapse (right, downloaded
-  from the reolink-timelapse server with the `dashboard` account). Both only play while the page
-  is on screen. Logins go in `settings.yaml` under `backyard:`.
+  passed through by ffmpeg without re-encoding; one connection stays open while the page is
+  enabled so the picture appears instantly) and the last-hour timelapse (right, downloaded from
+  the reolink-timelapse server with the `dashboard` account and shrunk to 960x540 / 30 fps).
+  The page stays up for one play of the last hour. Logins go in `settings.yaml` under `backyard:`.
 - **Pi-hole** (`/pihole`): totals for the last 24 hours, blocking on/off, a 24-hour chart, most
   blocked sites and busiest devices, read (only) from the Pi-hole v6 API with an app password.
 - **Settings** (`/settings`): page order and timing, what each page shows, night dimming.
