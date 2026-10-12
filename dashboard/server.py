@@ -15,6 +15,7 @@ from pathlib import Path
 from . import __version__, nws
 from .cameras import Live, Timelapse
 from .flights import Flights
+from .pihole import Pihole
 from .radar import Radar
 from .settings import EDITABLE, PAGE_SECONDS, Settings, get
 from .weather import Weather
@@ -32,6 +33,7 @@ PAGES = {
     "flights": {"title": "Flights", "icon": "plane", "file": "flights.html"},
     # Stays up for one play of the last hour, then says it's done (no timer).
     "backyard": {"title": "Backyard", "icon": "video", "file": "backyard.html", "ends_itself": True},
+    "pihole": {"title": "Pi-hole", "icon": "shield", "file": "pihole.html"},
 }
 OTHER_FILES = {"/": "shell.html", "/settings": "settings.html"}
 
@@ -72,6 +74,7 @@ class App:
         self.flights = Flights(settings, data_dir)
         self.timelapse = Timelapse(settings, data_dir)
         self.live = Live(settings)
+        self.pihole = Pihole(settings, data_dir)
 
     def start_background(self):
         minutes = self.settings["weather"]["refresh_minutes"]
@@ -79,6 +82,7 @@ class App:
         run_every(4 * 60, self.radar.refresh, "radar")
         run_every(2, self.flights.refresh, "flights")
         run_every(60, self.timelapse.refresh, "timelapse")
+        run_every(30, self.pihole.refresh, "pihole")
         run_every(5, self.check_settings_file, "settings")
 
     def check_settings_file(self):
@@ -87,6 +91,7 @@ class App:
             self.settings_rev += 1  # open pages reload
             self.live.restart()  # the camera address or login may have changed
             threading.Thread(target=self.timelapse.refresh, daemon=True).start()
+            threading.Thread(target=self.pihole.refresh, daemon=True).start()
 
     def backyard_status(self):
         return {
@@ -253,6 +258,8 @@ def make_handler(app: App):
                 self.send_json(app.weather.summary)
             elif path == "/api/flights":
                 self.send_json(app.flights.latest)
+            elif path == "/api/pihole":
+                self.send_json(app.pihole.latest)
             elif path == "/api/backyard":
                 self.send_json(app.backyard_status())
             elif path == "/camera/last_hour.mp4":

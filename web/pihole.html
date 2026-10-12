@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-hole</title>
+<link rel="stylesheet" href="/static/css/common.css">
+<link rel="stylesheet" href="/static/css/pihole.css">
+</head>
+<body>
+<div id="stage">
+  <div id="pihole">
+
+    <div id="tiles">
+      <div class="tile"><div class="k">Questions · last 24 h</div><div class="v" id="total">--</div></div>
+      <div class="tile"><div class="k">Blocked · last 24 h</div><div class="v blocked" id="blocked">--</div></div>
+      <div class="tile"><div class="k">Share blocked</div><div class="v" id="percent">--</div></div>
+      <div class="tile"><div class="k">Sites on blocklists</div><div class="v" id="listsize">--</div></div>
+      <div class="tile status" id="status">
+        <div class="dot"></div>
+        <div><div class="st" id="status-text">Checking…</div><div class="ss" id="status-sub">Pi-hole · mini PC</div></div>
+      </div>
+    </div>
+
+    <section id="chart-panel" class="panel">
+      <div class="head">
+        Last 24 hours
+        <span class="legend"><i class="allowed"></i>Allowed<i class="blocked"></i>Blocked</span>
+      </div>
+      <div id="bars"></div>
+      <div id="axis"></div>
+      <div class="msg" id="msg" hidden></div>
+    </section>
+
+    <section id="lists">
+      <div class="panel list"><div class="head">Most blocked</div><div id="top-blocked"></div></div>
+      <div class="panel list"><div class="head">Busiest devices</div><div id="top-clients"></div></div>
+    </section>
+
+  </div>
+</div>
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/pihole.js"></script>
+</body>
+</html>

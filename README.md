@@ -15,6 +15,8 @@ Pages so far:
   passed through by ffmpeg without re-encoding) and the last-hour timelapse (right, downloaded
   from the reolink-timelapse server with the `dashboard` account). Both only play while the page
   is on screen. Logins go in `settings.yaml` under `backyard:`.
+- **Pi-hole** (`/pihole`): totals for the last 24 hours, blocking on/off, a 24-hour chart, most
+  blocked sites and busiest devices, read (only) from the Pi-hole v6 API with an app password.
 - **Settings** (`/settings`): page order and timing, what each page shows, night dimming.
   Changes save to `settings.yaml`. Only the touchscreen itself can change settings
   (other computers see them read-only) unless `allow_settings_from_network: true`.

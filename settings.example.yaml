@@ -32,6 +32,9 @@ pages:
     - name: backyard
       enabled: true
       seconds: 45
+    - name: pihole
+      enabled: true
+      seconds: 30
 
 weather:
   # How often to fetch forecasts, current conditions and alerts.
@@ -68,6 +71,11 @@ backyard:
     url: rtsp://192.168.1.176:554/h264Preview_03_sub
     user: ""          # the recorder's user name, between the quotes
     password: ""      # the recorder's password, between the quotes
+
+pihole:
+  # The Pi-hole on the mini PC (read only).
+  url: http://192.168.1.76:8053
+  password: ""        # Pi-hole app password, between the quotes
 
 screen:
   # Darken the screen between these times (this monitor has no brightness
