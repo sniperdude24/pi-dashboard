@@ -102,7 +102,7 @@ function render(id, d) {
       ${ring(d.temp, level(d.temp, side.tempWarn, side.tempBad, "#b4a2e8"), temp, "Temperature")}
       ${spark(d.cpu_history)}</div>`;
     const rows = (d.disks || []).map((k) => bar(k.name, `${size(k.used)} of ${size(k.total)}`, k.total ? k.used / k.total : null));
-    rows.push(bar("Download", rate(d.net_down), null), bar("Upload", rate(d.net_up), null));
+    rows.push(bar("Network", `↓ ${rate(d.net_down)} · ↑ ${rate(d.net_up)}`, null));
     html += `<div class="rows">${rows.join("")}</div><div class="box">${side.box(d)}</div>`;
   }
   if (!d || (d.error && !d.updated && d.cpu == null)) {
