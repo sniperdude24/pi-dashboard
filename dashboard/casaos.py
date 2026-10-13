@@ -27,6 +27,7 @@ class CasaOS:
         self.net = NetRate()
         self.net_rate = (0, 0)
         self.latest = {"error": None}
+        self.wait_until = 0  # back off after refusals, so CasaOS doesn't lock us out
 
     def configured(self):
         cfg = self.settings["casaos"]
@@ -71,10 +72,22 @@ class CasaOS:
         if not self.configured():
             self.latest = {"error": "Add the CasaOS login to settings.yaml (casaos → user and password)."}
             return
+        if time.time() < self.wait_until:
+            return
         try:
             util = self.get("/v1/sys/utilization").get("data") or {}
         except CasaOSError as e:
+            self.wait_until = time.time() + 60  # don't keep trying a refused login
             self.latest = {**self.latest, "error": str(e)}
+            return
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                self.wait_until = time.time() + 300
+                self.latest = {**self.latest, "error": "CasaOS asked the Pi to slow down; trying again in 5 minutes."}
+            else:
+                self.wait_until = time.time() + 60
+                self.latest = {**self.latest, "error": f"CasaOS answered with an error ({e.code})."}
+            log.info("casaos: %s on %s", e.code, e.url.split("/v", 1)[-1] if e.url else "?")
             return
         except Exception as e:
             self.latest = {**self.latest, "error": f"Can't reach CasaOS ({e})."}
