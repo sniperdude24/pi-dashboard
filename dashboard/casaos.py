@@ -28,6 +28,7 @@ class CasaOS:
         self.net_rate = (0, 0)
         self.latest = {"error": None}
         self.wait_until = 0  # back off after refusals, so CasaOS doesn't lock us out
+        self.version = ""
 
     def configured(self):
         cfg = self.settings["casaos"]
@@ -113,12 +114,22 @@ class CasaOS:
         disks = []
         if disk.get("size"):
             disks.append({"name": "System disk", "used": disk.get("used", 0), "total": disk["size"]})
+        usb = [d for d in util.get("sys_usb") or [] if d.get("size")]
+        for i, d in enumerate(usb):  # e.g. the 1.5 TB Sync drive with the timelapses
+            label = "USB drive" if len(usb) == 1 else f"USB drive {i + 1}"
+            disks.append({"name": label, "used": d["size"] - d.get("avail", 0), "total": d["size"]})
+
+        if not self.version:
+            try:
+                self.version = self.get("/v1/sys/version")["data"]["current_version"]
+            except Exception:
+                self.version = ""
 
         self.latest = {
             "error": None,
             "updated": time.time(),
             "name": "daveserver",
-            "model": "Mini PC · CasaOS",
+            "model": f"Mini PC · CasaOS {self.version}".strip(),
             "cpu": round(float(cpu.get("percent") or 0), 1),
             "cpu_history": self.cpu_history.list(),
             "mem_percent": round(float(mem.get("usedPercent") or 0), 1),
@@ -142,6 +153,11 @@ class CasaOS:
         for a in grid:
             title = a.get("title")
             name = (title.get("en_us") or title.get("en_US") or next(iter(title.values()), None)) if isinstance(title, dict) else title
-            apps.append({"name": name or a.get("name") or "?", "running": a.get("status") == "running"})
-        apps.sort(key=lambda a: (not a["running"], a["name"].lower()))
+            status = a.get("status")
+            # Apps CasaOS didn't install itself (e.g. the Cloudflare tunnel) come
+            # back with no status: that means "not tracked", not "stopped".
+            state = "running" if status == "running" else "unknown" if not status else "stopped"
+            apps.append({"name": name or a.get("name") or "?", "state": state})
+        order = {"running": 0, "stopped": 1, "unknown": 2}
+        apps.sort(key=lambda a: (order[a["state"]], a["name"].lower()))
         return apps

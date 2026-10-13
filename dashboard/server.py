@@ -99,7 +99,8 @@ class App:
             self.live.restart()  # the camera address or login may have changed
             threading.Thread(target=self.timelapse.refresh, daemon=True).start()
             threading.Thread(target=self.pihole.refresh, daemon=True).start()
-            self.casaos.token = None  # the CasaOS login may have changed
+            self.casaos.token = None  # the CasaOS login may have changed: try it now
+            self.casaos.wait_until = 0
             threading.Thread(target=self.casaos.refresh, daemon=True).start()
 
     def backyard_status(self):

@@ -65,12 +65,13 @@ function bar(label, value, fraction, warnAt = 0.8, badAt = 0.9) {
 
 function appsBox(d) {
   if (!d.apps) return `<div class="t">Apps</div><div class="power">CasaOS isn't sharing its app list.</div>`;
-  const running = d.apps.filter((a) => a.running).length;
-  const stopped = d.apps.length - running;
-  const head = `Apps · ${running} running${stopped ? ` · ${stopped} stopped` : ""}`;
-  return `<div class="t">${head}</div><div class="apps">${d.apps
+  const count = (state) => d.apps.filter((a) => a.state === state).length;
+  const parts = [`${count("running")} running`];
+  if (count("stopped")) parts.push(`${count("stopped")} stopped`);
+  if (count("unknown")) parts.push(`${count("unknown")} not reported`);
+  return `<div class="t">Apps · ${parts.join(" · ")}</div><div class="apps">${d.apps
     .slice(0, 12)
-    .map((a) => `<span class="${a.running ? "" : "off"}">${escapeHTML(a.name)}</span>`)
+    .map((a) => `<span class="${a.state === "running" ? "" : a.state === "stopped" ? "off" : "unknown"}">${escapeHTML(a.name)}</span>`)
     .join("")}</div>`;
 }
 
