@@ -35,6 +35,9 @@ pages:
     - name: pihole
       enabled: true
       seconds: 30
+    - name: servers
+      enabled: true
+      seconds: 30
 
 weather:
   # How often to fetch forecasts, current conditions and alerts.
@@ -76,6 +79,12 @@ pihole:
   # The Pi-hole on the mini PC (read only).
   url: http://192.168.1.76:8053
   password: ""        # Pi-hole app password, between the quotes
+
+casaos:
+  # CasaOS on the mini PC: its statistics and app list (read only).
+  url: http://192.168.1.76
+  user: ""            # your CasaOS user name, between the quotes
+  password: ""        # your CasaOS password, between the quotes
 
 screen:
   # Darken the screen between these times (this monitor has no brightness

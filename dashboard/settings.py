@@ -23,7 +23,13 @@ DEFAULTS = {
             {"name": "flights", "enabled": True, "seconds": 30},
             {"name": "backyard", "enabled": True, "seconds": 45},
             {"name": "pihole", "enabled": True, "seconds": 30},
+            {"name": "servers", "enabled": True, "seconds": 30},
         ],
+    },
+    "casaos": {
+        "url": "http://192.168.1.76",
+        "user": "",
+        "password": "",
     },
     "pihole": {
         "url": "http://192.168.1.76:8053",

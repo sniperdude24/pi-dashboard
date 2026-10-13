@@ -18,6 +18,9 @@ Pages so far:
   The page stays up for one play of the last hour. Logins go in `settings.yaml` under `backyard:`.
 - **Pi-hole** (`/pihole`): totals for the last 24 hours, blocking on/off, a 24-hour chart, most
   blocked sites and busiest devices, read (only) from the Pi-hole v6 API with an app password.
+- **Servers** (`/servers`): the mini PC (left, from CasaOS's own API, read only) and this Pi
+  (right, read directly): processor, memory, temperature, a one-hour processor graph, storage,
+  network, the CasaOS app list, and the Pi's power-supply check.
 - **Settings** (`/settings`): page order and timing, what each page shows, night dimming.
   Changes save to `settings.yaml`. Only the touchscreen itself can change settings
   (other computers see them read-only) unless `allow_settings_from_network: true`.

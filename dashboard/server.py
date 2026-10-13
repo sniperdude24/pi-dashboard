@@ -14,8 +14,10 @@ from pathlib import Path
 
 from . import __version__, nws
 from .cameras import Live, Timelapse
+from .casaos import CasaOS
 from .flights import Flights
 from .pihole import Pihole
+from .system import PiSystem
 from .radar import Radar
 from .settings import EDITABLE, PAGE_SECONDS, Settings, get
 from .weather import Weather
@@ -34,6 +36,7 @@ PAGES = {
     # Stays up for one play of the last hour, then says it's done (no timer).
     "backyard": {"title": "Backyard", "icon": "video", "file": "backyard.html", "ends_itself": True},
     "pihole": {"title": "Pi-hole", "icon": "shield", "file": "pihole.html"},
+    "servers": {"title": "Servers", "icon": "server", "file": "servers.html"},
 }
 OTHER_FILES = {"/": "shell.html", "/settings": "settings.html"}
 
@@ -75,6 +78,8 @@ class App:
         self.timelapse = Timelapse(settings, data_dir)
         self.live = Live(settings)
         self.pihole = Pihole(settings, data_dir)
+        self.pi_system = PiSystem()
+        self.casaos = CasaOS(settings)
 
     def start_background(self):
         minutes = self.settings["weather"]["refresh_minutes"]
@@ -83,6 +88,8 @@ class App:
         run_every(2, self.flights.refresh, "flights")
         run_every(60, self.timelapse.refresh, "timelapse")
         run_every(30, self.pihole.refresh, "pihole")
+        run_every(5, self.pi_system.sample, "pi-system")
+        run_every(10, self.casaos.refresh, "casaos")
         run_every(5, self.check_settings_file, "settings")
 
     def check_settings_file(self):
@@ -92,6 +99,8 @@ class App:
             self.live.restart()  # the camera address or login may have changed
             threading.Thread(target=self.timelapse.refresh, daemon=True).start()
             threading.Thread(target=self.pihole.refresh, daemon=True).start()
+            self.casaos.token = None  # the CasaOS login may have changed
+            threading.Thread(target=self.casaos.refresh, daemon=True).start()
 
     def backyard_status(self):
         return {
@@ -264,6 +273,8 @@ def make_handler(app: App):
                 self.send_json(app.weather.summary)
             elif path == "/api/flights":
                 self.send_json(app.flights.latest)
+            elif path == "/api/servers":
+                self.send_json({"mini": app.casaos.latest, "pi": app.pi_system.latest})
             elif path == "/api/pihole":
                 self.send_json(app.pihole.latest)
             elif path == "/api/backyard":
