@@ -38,10 +38,55 @@ function niceRings(range) {
   return [...new Set([round(range * 0.2), round(range * 0.5), range])];
 }
 
+// How far out the map shows. Normally range_miles; when fewer planes than fill
+// the list are that close, it widens in steps (up to expand_to_miles) until
+// they fit. It widens at once but only narrows again after 30 s, so it
+// doesn't jump back and forth as planes come and go.
+const NARROW_AFTER_MS = 30 * 1000;
+
+function wantedRange(planes) {
+  const base = CONFIG.flights.range_miles;
+  const max = Math.max(base, CONFIG.flights.expand_to_miles);
+  const need = CONFIG.flights.list_count;
+  if (planes.filter((p) => p.distance_mi <= base).length >= need) return base;
+  const nth = planes[need - 1]; // planes come sorted, closest first
+  if (!nth) return max;
+  const steps = [base, 75, 100, 150, 200, 250].filter((s) => s >= base && s < max).concat(max);
+  return steps.find((s) => s >= nth.distance_mi) || max;
+}
+
+function updateRange() {
+  const want = wantedRange(F.planes);
+  if (want > F.range) {
+    setRange(want);
+  } else if (want < F.range) {
+    F.narrowSince = F.narrowSince || Date.now();
+    if (Date.now() - F.narrowSince >= NARROW_AFTER_MS) setRange(want);
+  } else {
+    F.narrowSince = null;
+  }
+}
+
+function setRange(range) {
+  F.range = range;
+  F.narrowSince = null;
+  const loc = CONFIG.location;
+  const home = L.latLng(loc.latitude, loc.longitude);
+  F.rings.clearLayers();
+  for (const r of niceRings(range)) {
+    L.circle(home, { radius: r * MILES_TO_M, color: "#6b8091", weight: 2, dashArray: "10 10", fill: false, interactive: false }).addTo(F.rings);
+    const top = L.latLng(home.lat + (r * MILES_TO_M) / 111320, home.lng);
+    L.marker(top, {
+      icon: L.divIcon({ className: "ring-label", html: `${r} mi`, iconSize: [80, 24], iconAnchor: [-8, 12] }),
+      interactive: false,
+    }).addTo(F.rings);
+  }
+  F.map.fitBounds(home.toBounds(range * 2 * MILES_TO_M), { padding: [10, 10] });
+}
+
 function initMap() {
   const loc = CONFIG.location;
   const home = L.latLng(loc.latitude, loc.longitude);
-  const range = CONFIG.flights.range_miles;
   const map = L.map("map", {
     zoomControl: false,
     attributionControl: false,
@@ -55,26 +100,22 @@ function initMap() {
     minZoom: 5,
     maxZoom: 12,
   });
-  map.fitBounds(home.toBounds(range * 2 * MILES_TO_M), { padding: [10, 10] });
   const v = encodeURIComponent(CONFIG.version);
   L.tileLayer(`/tiles/base/{z}/{x}/{y}.png?v=${v}`, { maxZoom: 12 }).addTo(map);
   L.tileLayer(`/tiles/labels/{z}/{x}/{y}.png?v=${v}`, { maxZoom: 12, tileSize: 512, zoomOffset: -1, opacity: 0.7 }).addTo(map);
-
-  for (const r of niceRings(range)) {
-    L.circle(home, { radius: r * MILES_TO_M, color: "#6b8091", weight: 2, dashArray: "10 10", fill: false, interactive: false }).addTo(map);
-    const top = L.latLng(home.lat + (r * MILES_TO_M) / 111320, home.lng);
-    L.marker(top, {
-      icon: L.divIcon({ className: "ring-label", html: `${r} mi`, iconSize: [80, 24], iconAnchor: [-8, 12] }),
-      interactive: false,
-    }).addTo(map);
-  }
   L.marker(home, { icon: L.divIcon({ className: "home-dot", iconSize: [22, 22] }), interactive: false }).addTo(map);
   F.map = map;
+  F.rings = L.layerGroup().addTo(map);
+  setRange(CONFIG.flights.range_miles);
+}
+
+function shown() {
+  return F.planes.filter((p) => p.distance_mi <= F.range);
 }
 
 function updateMarkers() {
   const seen = new Set();
-  for (const p of F.planes) {
+  for (const p of shown()) {
     seen.add(p.id);
     let m = F.markers[p.id];
     if (!m) {
@@ -105,15 +146,16 @@ function updateMarkers() {
 
 function renderList(error) {
   const list = document.getElementById("list");
-  if (error && !F.planes.length) {
+  const planes = shown();
+  if (error && !planes.length) {
     list.innerHTML = `<div class="empty">${icon("wifi-off")}${escapeHTML(error)}</div>`;
     return;
   }
-  if (!F.planes.length) {
-    list.innerHTML = `<div class="empty">${icon("plane")}No planes nearby right now</div>`;
+  if (!planes.length) {
+    list.innerHTML = `<div class="empty">${icon("plane")}No planes within ${F.range} mi right now</div>`;
     return;
   }
-  list.innerHTML = F.planes
+  list.innerHTML = planes
     .slice(0, CONFIG.flights.list_count)
     .map((p) => {
       const badges =
@@ -171,8 +213,9 @@ async function loadFlights() {
     return;
   }
   F.planes = data.planes;
-  const n = F.planes.length;
-  document.getElementById("count").textContent = `· ${n} within ${CONFIG.flights.range_miles} mi`;
+  updateRange();
+  const widened = F.range > CONFIG.flights.range_miles ? " · widened to find planes" : "";
+  document.getElementById("count").textContent = `· ${shown().length} within ${F.range} mi${widened}`;
   updateMarkers();
   renderList(data.error);
 }

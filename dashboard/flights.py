@@ -142,7 +142,8 @@ class Flights:
         if "lat" not in a or a.get("seen_pos", 99) > 60:
             return None
         dist = _distance_mi(home["latitude"], home["longitude"], a["lat"], a["lon"])
-        if dist > cfg["range_miles"]:
+        # The page shows range_miles, widening up to expand_to_miles when it's quiet.
+        if dist > max(cfg["range_miles"], cfg["expand_to_miles"]):
             return None
         alt = a.get("alt_baro")
         on_ground = alt == "ground"
