@@ -214,7 +214,7 @@ async function loadFlights() {
   }
   F.planes = data.planes;
   updateRange();
-  const widened = F.range > CONFIG.flights.range_miles ? " · widened to find planes" : "";
+  const widened = F.range > CONFIG.flights.range_miles ? " · widened" : "";
   document.getElementById("count").textContent = `· ${shown().length} within ${F.range} mi${widened}`;
   updateMarkers();
   renderList(data.error);
